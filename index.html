@@ -787,7 +787,7 @@ $ sudo firewall-cmd --reload</pre>
    <tr><td>4 de octubre de 2022</td><td>ISC anuncia el <b>fin de vida del servidor</b> ISC DHCP. La última versión de mantenimiento es la 4.4.3-P1 (5 de octubre de 2022) y no habrá más, salvo una vulnerabilidad grave.</td></tr>
   </table></div>
   <p>El motivo, según ISC: el código de ISC DHCP es muy antiguo y <b>no fue diseñado para hacerle pruebas</b>, así que modificarlo era muy arriesgado. ISC lo describe como software maduro, pero a cambio ya casi no se podía mejorar. Kea, en cambio, sigue en desarrollo activo y tiene mantenimiento previsible. ISC recomienda Kea a quien despliegue DHCP nuevo.</p>
-  <div class="card sea"><span class="tag">Un matiz honesto</span><p style="margin:0">ISC DHCP <b>todavía existe</b> en Fedora 44 (paquete <code>dhcp-server</code> 4.4.3) y sigue funcionando. No hay que sacarlo de inmediato en redes estables. Pero para un servidor nuevo, la recomendación es Kea, que además está en Fedora 44 (paquete <code>kea</code> 3.0.2). Por eso practicamos con Kea, y por eso conviene reconocer el estilo de <code>dhcpd</code> cuando lo encuentren en documentación vieja.</p></div>
+  <div class="card sea"><span class="tag">Un matiz honesto</span><p style="margin:0">ISC DHCP <b>todavía existe</b> en Fedora 44 (paquete <code>dhcp-server</code> 4.4.3) y sigue funcionando. No hay que sacarlo de inmediato en redes estables. Pero para un servidor nuevo, la recomendación es Kea, que además está en Fedora 44 (paquete <code>kea</code> 3.0.3). Por eso practicamos con Kea, y por eso conviene reconocer el estilo de <code>dhcpd</code> cuando lo encuentren en documentación vieja.</p></div>
 
   <h3>Equivalencias entre los dos</h3>
   <div class="tablewrap"><table>
