@@ -476,13 +476,12 @@ $ sudo firewall-cmd --list-services
 <span class="c">LISTEN ... *:21 ... users:(("vsftpd",pid=...))</span></pre>
     <p class="ref">Los números exactos varían según la máquina. Lo importante es ver <code>vsftpd</code> en la línea. Si no sale nada, el servicio no está escuchando.</p></div></details>
 
-  <details><summary><code>getsebool -a | grep ftp</code> y <code>sudo setsebool -P ftp_home_dir on</code></summary><div class="in">
-    <p><b>Función:</b> SELinux es una capa de protección que, por defecto, no deja que vsftpd entre a las carpetas personales de los usuarios. <code>getsebool -a | grep ftp</code> lista los interruptores relacionados con FTP y su estado. <code>setsebool -P ftp_home_dir on</code> enciende el que permite entrar a las carpetas personales.</p>
+  <details><summary><code>getsebool -a | grep ftp</code></summary><div class="in">
+    <p><b>Función:</b> SELinux es una capa de protección que decide qué puede hacer cada servicio, incluso por encima de los permisos de Linux. Muchos de sus permisos son "interruptores" llamados <b>booleanos</b>, que se encienden o apagan sin desactivar SELinux. Este comando lista los que se relacionan con FTP y su estado.</p>
     <pre>$ getsebool -a | grep ftp
-<span class="c">ftp_home_dir --&gt; off
-...</span>
-$ sudo setsebool -P ftp_home_dir on</pre>
-    <p class="ref">La opción <code>-P</code> hace el cambio permanente. Sin ella, se pierde al reiniciar. No se desactiva SELinux: se enciende solo el permiso necesario. Esa es la forma correcta de resolverlo.</p></div></details>
+<span class="c">ftpd_full_access --&gt; off
+...</span></pre>
+    <p class="ref">Los booleanos cambian entre versiones de Fedora: en la 44, <code>getsebool ftp_home_dir</code> responde con un error porque ese nombre ya no existe. Por eso la regla es: <b>solo mire</b>. Si la prueba de FTP funciona, no cambie nada. Si falla con "Permission denied" aunque los permisos de Linux estén bien, SELinux es el siguiente sospechoso: en ese caso anote la lista de booleanos y avise al profesor. Para encender uno, el comando es <code>sudo setsebool -P nombre on</code> (con <code>-P</code> el cambio es permanente). Nunca se desactiva SELinux.</p></div></details>
 
   <details><summary><code>sudo dnf install ftp -y</code> y <code>ftp IP_DEL_SERVIDOR</code></summary><div class="in">
     <p><b>Función:</b> instala el cliente FTP de línea de comandos y se conecta al servidor. Se ejecuta desde la máquina cliente. Dentro de la sesión se usan estos comandos:</p>
@@ -650,7 +649,7 @@ $ timedatectl list-timezones | grep Panama
     </table></div>
     <p class="ref">La línea que van a poner en clase es:</p>
     <pre>pool 0.north-america.pool.ntp.org iburst</pre>
-    <p class="ref">Comente con <code>#</code> las líneas <code>pool</code> o <code>server</code> que ya traiga el archivo, para que quede una sola fuente definida y sea fácil de verificar.</p></div></details>
+    <p class="ref">En Fedora el archivo ya trae un pool propio (el servidor que chrony elige por defecto aparece en el registro con un nombre como <code>2.fedora.pool.ntp.org</code>). Comente con <code>#</code> las líneas <code>pool</code> o <code>server</code> que ya traiga el archivo, para que quede una sola fuente definida y sea fácil de verificar.</p></div></details>
 
   <details><summary><code>grep -E '^(pool|server)' /etc/chrony.conf</code></summary><div class="in">
     <p><b>Función:</b> muestra solo las líneas que definen fuentes de hora, sin comentarios. Sirve para ver qué fuente está usando realmente.</p>
@@ -845,7 +844,7 @@ $ ip -br addr
   <details><summary><code>sudo dnf install kea -y</code></summary><div class="in">
     <p><b>Función:</b> instala Kea. Incluye los servicios <code>kea-dhcp4</code> (DHCP para IPv4), <code>kea-dhcp6</code> (IPv6) y otros. Aquí solo se usa <code>kea-dhcp4</code>.</p>
     <pre>$ sudo dnf install kea -y
-<span class="c">Installed: kea-3.0.2-...</span></pre></div></details>
+<span class="c">Installed: kea-3.0.3-...</span></pre></div></details>
 
   <details><summary><code>sudo cp /etc/kea/kea-dhcp4.conf /etc/kea/kea-dhcp4.conf.bak</code></summary><div class="in">
     <p><b>Función:</b> guarda una copia del archivo de configuración original antes de modificarlo. Es un hábito básico de administración: si algo sale mal, se puede volver atrás.</p>
@@ -1269,7 +1268,7 @@ $ sudo systemctl start mariadb
   <p>Postfix es un MTA muy extendido en Linux. Su diseño separa el trabajo en varios procesos pequeños, cada uno con una sola función, y eso ayuda a la seguridad: si una pieza falla, no arrastra a las demás. Fedora 44 incluye la versión 3.10.</p>
 
   <h2>Quién puede llegar al puerto 25</h2>
-  <p>La documentación de Postfix indica que el valor por defecto de <code>inet_interfaces</code> es <code>all</code>: escuchar en <b>todas</b> las interfaces. La guía de Server World para Fedora 44 explica que, para abrir el servidor a la red, hay que cambiar esa línea a <code>all</code>, lo que sugiere que el archivo de Fedora viene limitado al equipo local. Aun así, en la práctica se lee el valor y luego se fija de forma explícita, sin suponer nada. En cambio, <code>mynetworks</code> (los equipos a los que Postfix les reenvía correo) por defecto solo autoriza a la propia máquina, y la documentación señala que dejar <code>relay_domains</code> vacío es lo más seguro.</p>
+  <p>La documentación de Postfix indica que el valor por defecto de <code>inet_interfaces</code> es <code>all</code>: escuchar en <b>todas</b> las interfaces. En Fedora 44 el paquete viene ya con el valor <code>localhost</code> (se comprueba con <code>postconf -h inet_interfaces</code>), y la guía de Server World para Fedora 44 lo cambia a <code>all</code> justo para abrir el servidor a la red. Aun así, en la práctica fijamos <code>loopback-only</code> de forma explícita: queda escrito en el archivo y no depende de lo que traiga el paquete. En cambio, <code>mynetworks</code> (los equipos a los que Postfix les reenvía correo) por defecto solo autoriza a la propia máquina, y la documentación señala que dejar <code>relay_domains</code> vacío es lo más seguro.</p>
   <div class="card red"><span class="tag">Relé abierto</span><p style="margin:0">Un servidor que acepta correo de cualquiera y lo reenvía a cualquier destino se llama <b>relé abierto</b> (open relay). Los spammers lo buscan y lo usan para enviar su basura a nombre de su servidor, y eso termina con la dirección IP del servidor en listas negras. Casi siempre se llega a ese estado por una sola línea mal puesta, como autorizar en <code>mynetworks</code> a todo Internet.</p></div>
   <p>Para este laboratorio, donde solo se envía correo entre cuentas locales, la decisión segura es hacer que Postfix escuche <b>únicamente en la interfaz local</b> con <code>inet_interfaces = loopback-only</code>. Así el puerto 25 no existe para el resto de la red.</p>
 
@@ -1306,10 +1305,10 @@ $ systemctl is-active postfix
   <details><summary><code>postconf inet_interfaces</code> y <code>postconf -h inet_interfaces</code></summary><div class="in">
     <p><b>Función:</b> <code>postconf</code> consulta la configuración de Postfix sin abrir el archivo. Con un nombre de parámetro muestra su valor actual; con <code>-h</code> muestra solo el valor, sin el nombre.</p>
     <pre>$ postconf inet_interfaces
-<span class="c">inet_interfaces = ...</span>
+<span class="c">inet_interfaces = localhost</span>
 $ postconf -h inet_interfaces
-<span class="c">...</span></pre>
-    <p class="ref">No asuma el valor: léalo. Puede variar según cómo venga el paquete.</p></div></details>
+<span class="c">localhost</span></pre>
+    <p class="ref">En Fedora 44 la respuesta de fábrica es <code>localhost</code>: solo atiende al propio equipo. Léalo siempre antes de cambiarlo.</p></div></details>
 
   <details><summary><code>sudo postconf -e 'inet_interfaces = loopback-only'</code></summary><div class="in">
     <p><b>Función:</b> con <code>-e</code> escribe el parámetro en <code>/etc/postfix/main.cf</code>. Es más seguro que editar a mano porque evita errores de sintaxis. <code>loopback-only</code> hace que Postfix atienda solo conexiones locales. Cambiar <code>inet_interfaces</code> exige reiniciar el servicio, no basta con recargar.</p>
@@ -1730,7 +1729,8 @@ $ dig @127.0.0.1 puerto.test MX +short
     <p><b>Función:</b> instala el servidor Samba y el cliente <code>smbclient</code>, que sirve para probar la conexión desde la propia consola.</p>
     <pre>$ sudo dnf install samba samba-client -y
 $ smbclient --version
-<span class="c">Version 4.xx.x</span></pre></div></details>
+<span class="c">Version 4.xx.x</span></pre>
+    <p class="ref">Si más adelante <code>testparm</code> responde "command not found", falta el paquete que incluye las herramientas de administración: <code>sudo dnf install samba-common-tools -y</code>.</p></div></details>
 
   <details><summary><code>sudo groupadd smbgroup</code> y <code>sudo useradd -M -s /sbin/nologin -g smbgroup smbuser</code></summary><div class="in">
     <p><b>Función:</b> crea el grupo que tendrá acceso y un usuario que pertenece a él. <code>-M</code> no crea carpeta personal y <code>-s /sbin/nologin</code> le quita la consola: esta cuenta solo se usa para entrar a la carpeta compartida y no necesita iniciar sesión en el servidor.</p>
@@ -2022,7 +2022,7 @@ makePrac("ftp",[
 ["Preparar la jaula del usuario","sudo chmod a-w /home/ftpuser && sudo mkdir /home/ftpuser/archivos && sudo chown ftpuser:ftpuser /home/ftpuser/archivos","Compruebe con ls -ld /home/ftpuser /home/ftpuser/archivos. Captura de pantalla."],
 ["Aplicar los cambios","sudo systemctl restart vsftpd","Compruebe que sigue active con systemctl status vsftpd."],
 ["Abrir el firewall","sudo firewall-cmd --add-service=ftp --permanent && sudo firewall-cmd --reload","Luego: sudo firewall-cmd --list-services. Debe aparecer ftp. Captura de pantalla."],
-["Permitir carpetas personales en SELinux","sudo setsebool -P ftp_home_dir on","Verifique con getsebool ftp_home_dir. Debe decir on."],
+["Mirar los booleanos de SELinux para FTP","getsebool -a | grep ftp","Solo mire; no cambie nada si la prueba del paso siguiente funciona. Captura de pantalla."],
 ["Preparar un archivo de prueba en el cliente","echo 'hola puerto' > prueba.txt","Se crea en la máquina cliente."],
 ["Probar la jaula desde el cliente","ftp IP_DEL_SERVIDOR","Entre como ftpuser. Ejecute pwd, luego cd .. y vuelva a pwd (no debe poder salir). Luego: cd archivos, put prueba.txt, ls y bye. Captura de pantalla."],
 ["Repetir con SFTP y comparar","sftp ftpuser@IP_DEL_SERVIDOR","Dentro: pwd y cd /. ¿Puede salir de su carpeta? ¿Qué cambió respecto al paso anterior? Anótelo."]]);
@@ -2167,7 +2167,7 @@ makePrac("mail",[
 ["Instalar Postfix y el cliente de correo","sudo dnf install postfix s-nail -y","Compruebe con command -v mail. Captura de pantalla."],
 ["Habilitar e iniciar Postfix","sudo systemctl enable --now postfix","Compruebe con systemctl is-active postfix. Debe decir active."],
 ["Ver cómo escucha Postfix antes de cambiar nada","postconf -h inet_interfaces","Anote el valor y revise también ss -ltn | grep ':25'. Captura de pantalla."],
-["Limitar Postfix a la interfaz local","sudo postconf -e 'inet_interfaces = loopback-only'","Es el parámetro de aseguramiento de este tema."],
+["Limitar Postfix a la interfaz local","sudo postconf -e 'inet_interfaces = loopback-only'","Fedora ya trae localhost, pero se fija de forma explícita para que no dependa del valor por defecto. Es el parámetro de aseguramiento de este tema."],
 ["Reiniciar para aplicar el cambio","sudo systemctl restart postfix","Cambiar inet_interfaces exige reinicio, no basta con recargar."],
 ["Verificar el cambio","ss -ltn | grep ':25'","Debe aparecer 127.0.0.1:25 y ninguna dirección de red. Captura de pantalla."],
 ["Revisar que Postfix esté sano","sudo postfix check","Si no imprime nada, todo está bien."],
@@ -2248,7 +2248,7 @@ makePrac("smb",[
 ["Probar desde el equipo cliente","smbclient //IP_DEL_SERVIDOR/compartido -U smbuser","Suba un archivo con put y compruebe con ls. En Windows use \\\\IP_DEL_SERVIDOR\\compartido. Captura de pantalla."]]);
 makeCtf("smb",[
 {t:"Bandera 1: la bodega está abierta",cmd:'echo "$(hostname)|$(systemctl is-active smb)" | sha256sum | cut -c1-8',val:"active",hint:"Solo funciona si completó los pasos de instalación y habilitó el servicio smb."},
-{t:"Bandera 2: solo entra el grupo autorizado",cmd:`echo "$(hostname)|$(sudo testparm -s 2>/dev/null | awk '$1=="valid"&&$2=="users"{print $4; exit}')" | sha256sum | cut -c1-8`,val:"@smbgroup",hint:"La línea debe ser exactamente valid users = @smbgroup dentro del recurso [compartido]. Revise con sudo testparm -s."},
+{t:"Bandera 2: solo entra el grupo autorizado",cmd:`echo "$(hostname)|$(sudo testparm -s 2>/dev/null | awk '/^\\[/{s=$0} s=="[compartido]"&&$1=="valid"&&$2=="users"{print $4; exit}')" | sha256sum | cut -c1-8`,val:"@smbgroup",hint:"La línea debe ser exactamente valid users = @smbgroup dentro del recurso [compartido]. Revise con sudo testparm -s, dentro de la sección [compartido]."},
 {t:"Bandera 3: la etiqueta de SELinux",cmd:'echo "$(hostname)|$(ls -Zd /srv/compartido | grep -o samba_share_t | head -1)" | sha256sum | cut -c1-8',val:"samba_share_t",hint:"Ejecute semanage fcontext y luego restorecon. Compruebe con ls -Zd /srv/compartido."},
 {t:"Bandera 4: el firewall conoce a Samba",cmd:'echo "$(hostname)|$(sudo firewall-cmd --list-services | tr \' \' \'\\n\' | grep -x samba)" | sha256sum | cut -c1-8',val:"samba",hint:"Agregue el servicio samba con --permanent y haga reload. Compruebe con sudo firewall-cmd --list-services."}]);
 
